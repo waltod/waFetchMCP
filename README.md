@@ -13,7 +13,7 @@ Use it when a site does not have a ready-made MCP integration yet, or when you w
 - robots.txt inspection so agents can check crawl guidance before building a reusable workflow.
 - Challenge signal reporting for login walls, bot checks, CAPTCHA pages, and JavaScript verification pages. waFetchMCP reports what it sees; downstream function authors decide how their workflows handle those responses.
 - Declarative saved functions in `functions/*.json`.
-- Function steps for `fetch_url`, `fetch_json`, `discover_page`, `get_robots_txt`, `json_path`, `regex`, `map`, and `template`.
+- Function steps for `fetch_url`, `fetch_json`, `fetch_each_url`, `fetch_each_json`, `discover_page`, `get_robots_txt`, `json_path`, `regex`, `unique`, `map`, and `template`.
 - Private network protection by default.
 - Bundled workflow examples and patterns for Fandom MediaWiki APIs, IMDb suggestion metadata, and LCSC-style catalog lookups.
 
@@ -128,6 +128,8 @@ npm run cli -- functions
 npm run cli -- run-function fandom-allpages --arg wiki=harrypotter --arg limit=3 --trace
 npm run cli -- run-function fandom-page-html --arg wiki=harrypotter --arg "title=Harry Potter"
 npm run cli -- run-function imdb-title-suggestion --arg titleId=tt0133093 --trace
+npm run cli -- run-function imdb-genre-scraper --arg filter=action --arg limit=5 --trace
+npm run cli -- run-function lcsc-search-list --arg "keyword=ESPRESSIF ESP32-S3" --arg limit=5
 ```
 
 After global installation:
@@ -247,6 +249,16 @@ npm run cli -- run-function imdb-title-suggestion --arg titleId=tt0133093 --trac
 
 The result includes title id, title, year, type, cast summary, rank, image metadata, and canonical IMDb URL.
 
+## IMDb Genre Scraper Workflow Example
+
+waFetchMCP also includes an adaptation of [`Xplit495/imdb-scraper`](https://github.com/Xplit495/imdb-scraper). The original scraper discovers movie links from `https://m.imdb.com/chart/top/?genres=<filter>` and then fetches each title page's JSON-LD. The waFetchMCP version keeps the genre-chart discovery step, deduplicates title ids, and enriches each title through IMDb's public suggestion JSON endpoint.
+
+```bash
+npm run cli -- run-function imdb-genre-scraper --arg filter=action --arg limit=5 --trace
+```
+
+Direct IMDb chart pages may return Amazon WAF challenge headers to direct HTTP clients. When that happens, the workflow returns an empty movie list plus `chartChallenge` details instead of bypassing the challenge.
+
 ## LCSC-Style Workflow Examples
 
 LCSC-style examples show how to turn a catalog search or product-detail endpoint into a reusable workflow without changing server code. Use `discover_page` on a search or product page first, inspect any public JSON endpoints or structured product metadata, then save the repeatable fetch sequence as a function.
@@ -259,6 +271,12 @@ Useful patterns for catalog workflows:
 - Keep generated workflows respectful of robots.txt and make explicit workflow decisions for CAPTCHA, login, access-denied, rate-limit, or bot-verification signals.
 
 See `functions/README.md` for the bundled example inventory and command patterns.
+
+For a concise LCSC product list:
+
+```bash
+npm run cli -- run-function lcsc-search-list --arg "keyword=ESPRESSIF ESP32-S3" --arg limit=5
+```
 
 ## Safety
 

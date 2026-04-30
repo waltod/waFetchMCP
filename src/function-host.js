@@ -12,6 +12,8 @@ import { discoverPage, fetchJson, fetchUrl, getConfig, getRobotsTxt, selectJsonP
 
 const MAX_STEPS = 40;
 const MAX_REGEX_MATCHES = 1000;
+const MAX_FETCH_EACH_ITEMS = 100;
+const MAX_FETCH_EACH_CONCURRENCY = 10;
 
 export function listFetcherFunctions(config = getConfig()) {
   ensureFunctionsDir(config);
@@ -130,6 +132,15 @@ async function runStep(step, context, config) {
   if (step.op === "map") {
     return runMap(step, context);
   }
+  if (step.op === "unique") {
+    return runUnique(step, context);
+  }
+  if (step.op === "fetch_each_json") {
+    return runFetchEach(step, context, config, fetchJson);
+  }
+  if (step.op === "fetch_each_url") {
+    return runFetchEach(step, context, config, fetchUrl);
+  }
   if (step.op === "template") {
     return resolveTemplateValue(step.value, context);
   }
@@ -157,18 +168,72 @@ function runMap(step, context) {
   if (!Array.isArray(values)) {
     throw new Error(`map step expected an array at ${step.from}`);
   }
-  const maxItems = clampInteger(step.maxItems, 1, 10000, values.length);
+  const maxItems = stepInteger(step.maxItems, context, 1, 10000, values.length);
   return values.slice(0, maxItems).map((item, index) => {
     const itemContext = {
       ...context,
       item,
-      index
+      index,
+      rank: index + 1
     };
     if (step.path) {
       return resolvePath(itemContext, step.path);
     }
     return resolveTemplateValue(step.value, itemContext);
   });
+}
+
+function runUnique(step, context) {
+  const values = resolvePath(context, step.from);
+  if (!Array.isArray(values)) {
+    throw new Error(`unique step expected an array at ${step.from}`);
+  }
+  const maxItems = stepInteger(step.maxItems, context, 1, 10000, values.length);
+  const seen = new Set();
+  const output = [];
+  for (const item of values) {
+    const key = step.path ? resolvePath({ ...context, item }, step.path) : item;
+    const normalizedKey = typeof key === "string" ? key : JSON.stringify(key);
+    if (seen.has(normalizedKey)) {
+      continue;
+    }
+    seen.add(normalizedKey);
+    output.push(item);
+    if (output.length >= maxItems) {
+      break;
+    }
+  }
+  return output;
+}
+
+async function runFetchEach(step, context, config, fetcher) {
+  const values = resolvePath(context, step.from);
+  if (!Array.isArray(values)) {
+    throw new Error(`${step.op} step expected an array at ${step.from}`);
+  }
+  const maxItems = stepInteger(step.maxItems, context, 1, MAX_FETCH_EACH_ITEMS, Math.min(values.length, 10));
+  const concurrency = stepInteger(step.concurrency, context, 1, MAX_FETCH_EACH_CONCURRENCY, 4);
+  const inputTemplate = step.input || {};
+  const selected = values.slice(0, maxItems);
+  const results = new Array(selected.length);
+  let nextIndex = 0;
+
+  async function worker() {
+    while (nextIndex < selected.length) {
+      const index = nextIndex;
+      nextIndex += 1;
+      const itemContext = {
+        ...context,
+        item: selected[index],
+        index,
+        rank: index + 1
+      };
+      results[index] = await fetcher(resolveTemplateValue(inputTemplate, itemContext), config);
+    }
+  }
+
+  await Promise.all(Array.from({ length: Math.min(concurrency, selected.length) }, worker));
+  return results;
 }
 
 function resolveTemplateValue(value, context) {
@@ -327,4 +392,8 @@ function clampInteger(value, min, max, fallback) {
     return fallback;
   }
   return Math.max(min, Math.min(max, parsed));
+}
+
+function stepInteger(value, context, min, max, fallback) {
+  return clampInteger(resolveTemplateValue(value, context), min, max, fallback);
 }

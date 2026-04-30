@@ -21,10 +21,12 @@ The bundled LCSC workflows use public no-key web endpoints that are already exer
 ```bash
 npm run cli -- run-function lcsc-search --arg keyword=C2980297
 npm run cli -- run-function lcsc-product-detail --arg productCode=C2980297
+npm run cli -- run-function lcsc-search-list --arg "keyword=ESPRESSIF ESP32-S3" --arg limit=5
 ```
 
 - `lcsc-search` returns direct-match metadata for exact LCSC part numbers and raw product lists for broader search phrases.
 - `lcsc-product-detail` returns normalized product identity, stock, attributes, and price breaks.
+- `lcsc-search-list` returns a concise list with product code, MPN, manufacturer, category, package, stock, price breaks, product URL, datasheet URL, and image URL.
 
 These examples also demonstrate the catalog workflow pattern: discover a search or product page, prefer public JSON endpoints or structured product metadata, then normalize fields with `json_path` and `map`.
 
@@ -43,7 +45,11 @@ IMDb title pages may return Amazon WAF challenge responses to direct HTTP client
 
 ```bash
 npm run cli -- run-function imdb-title-suggestion --arg titleId=tt0133093 --trace
+npm run cli -- run-function imdb-genre-scraper --arg filter=action --arg limit=5 --trace
 ```
 
 - `imdb-title-suggestion` returns one normalized title match with title, year, type, cast summary, rank, image metadata, and canonical IMDb URL.
+- `imdb-genre-scraper` adapts [`Xplit495/imdb-scraper`](https://github.com/Xplit495/imdb-scraper): it discovers title ids from IMDb's genre chart page, deduplicates them, then enriches each through IMDb's public suggestion JSON endpoint.
 - If a direct IMDb page fetch is attempted separately and returns an Amazon WAF challenge header, waFetchMCP reports it as a `bot_challenge` signal.
+
+In environments where IMDb returns Amazon WAF challenges for chart pages, `imdb-genre-scraper` returns an empty movie list plus `chartChallenge` details. It does not bypass CAPTCHA, WAF, or browser-verification controls.

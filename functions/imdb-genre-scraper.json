@@ -1,0 +1,88 @@
+{
+  "name": "imdb-genre-scraper",
+  "description": "Adapt Xplit495/imdb-scraper's IMDb genre chart flow into a waFetchMCP workflow. It extracts title ids from the IMDb chart page, then fetches per-title metadata from IMDb's public suggestion JSON endpoint.",
+  "version": "0.1.0",
+  "inputSchema": {
+    "filter": {
+      "type": "string",
+      "required": true,
+      "description": "IMDb genre filter, for example action, drama, comedy, horror, or sci-fi."
+    },
+    "limit": {
+      "type": "number",
+      "required": false,
+      "description": "Maximum titles to enrich from the chart. Defaults to 10 and is capped by the workflow host."
+    }
+  },
+  "steps": [
+    {
+      "id": "chart",
+      "op": "fetch_url",
+      "input": {
+        "url": "https://m.imdb.com/chart/top/?genres={{filter|lower|urlencode}}",
+        "headers": {
+          "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3",
+          "accept-language": "en-US,en;q=0.9"
+        },
+        "responseType": "text",
+        "maxBytes": 2097152
+      }
+    },
+    {
+      "id": "titleIds",
+      "op": "regex",
+      "from": "steps.chart.text",
+      "pattern": "\\/title\\/(tt\\d+)\\/",
+      "group": 1,
+      "maxMatches": 250
+    },
+    {
+      "id": "uniqueTitleIds",
+      "op": "unique",
+      "from": "steps.titleIds",
+      "maxItems": "{{limit|10}}"
+    },
+    {
+      "id": "suggestions",
+      "op": "fetch_each_json",
+      "from": "steps.uniqueTitleIds",
+      "maxItems": "{{limit|10}}",
+      "concurrency": 4,
+      "input": {
+        "url": "https://v2.sg.media-imdb.com/suggestion/t/{{item|lower|urlencode}}.json",
+        "headers": {
+          "accept": "application/json"
+        },
+        "maxBytes": 1048576
+      }
+    },
+    {
+      "id": "movies",
+      "op": "map",
+      "from": "steps.suggestions",
+      "value": {
+        "ranking": "$rank",
+        "titleId": "$item.json.d.0.id",
+        "image": "$item.json.d.0.i.imageUrl",
+        "title": "$item.json.d.0.l",
+        "date": "$item.json.d.0.y",
+        "rating": null,
+        "director": "",
+        "actors": "$item.json.d.0.s",
+        "synopsis": "",
+        "titleUrl": "https://www.imdb.com/title/{{item.json.d.0.id|urlencode}}/"
+      }
+    }
+  ],
+  "returns": {
+    "source": "xplit495-imdb-scraper-adapted",
+    "filter": "{{filter}}",
+    "chartUrl": "$steps.chart.finalUrl",
+    "chartStatus": "$steps.chart.status",
+    "chartChallenge": "$steps.chart.challenge",
+    "titleIds": "$steps.uniqueTitleIds",
+    "count": "$steps.movies.length",
+    "movies": "$steps.movies",
+    "note": "This follows Xplit495/imdb-scraper's genre chart discovery flow. Direct IMDb title-page JSON-LD scraping can return Amazon WAF challenges to direct HTTP clients, so this workflow enriches chart title ids through IMDb's public suggestion JSON endpoint."
+  }
+}

@@ -1,0 +1,74 @@
+{
+  "name": "lcsc-search-list",
+  "description": "Search LCSC products and return a concise normalized product list.",
+  "version": "0.1.0",
+  "inputSchema": {
+    "keyword": {
+      "type": "string",
+      "required": true,
+      "description": "LCSC part number, MPN, category, manufacturer, or search phrase."
+    },
+    "limit": {
+      "type": "number",
+      "required": false,
+      "description": "Maximum products to return. Defaults to 10."
+    }
+  },
+  "steps": [
+    {
+      "id": "api",
+      "op": "fetch_json",
+      "input": {
+        "url": "https://wmsc.lcsc.com/ftps/wm/search/v2/global",
+        "method": "POST",
+        "headers": {
+          "accept": "application/json",
+          "content-type": "application/json"
+        },
+        "json": {
+          "keyword": "{{keyword}}"
+        },
+        "maxBytes": 2097152
+      }
+    },
+    {
+      "id": "products",
+      "op": "json_path",
+      "from": "steps.api.json",
+      "path": "result.productSearchResultVO.productList"
+    },
+    {
+      "id": "list",
+      "op": "map",
+      "from": "steps.products",
+      "maxItems": "{{limit|10}}",
+      "value": {
+        "productCode": "$item.productCode",
+        "mpn": "$item.productModel",
+        "manufacturer": "$item.brandNameEn",
+        "name": "$item.productNameEn",
+        "description": "$item.productIntroEn",
+        "category": "$item.catalogName",
+        "parentCategory": "$item.parentCatalogName",
+        "package": "$item.encapStandard",
+        "stock": "$item.stockNumber",
+        "stockSz": "$item.stockSz",
+        "minOrderQuantity": "$item.minBuyNumber",
+        "orderMultiple": "$item.minPacketNumber",
+        "priceBreaks": "$item.productPriceList",
+        "productUrl": "$item.url",
+        "datasheetUrl": "$item.pdfUrl",
+        "imageUrl": "$item.productImageUrl"
+      }
+    }
+  ],
+  "returns": {
+    "source": "scrape",
+    "keyword": "{{keyword}}",
+    "status": "$steps.api.status",
+    "ok": "$steps.api.ok",
+    "totalCount": "$steps.api.json.result.productSearchResultVO.totalCount",
+    "count": "$steps.list.length",
+    "products": "$steps.list"
+  }
+}

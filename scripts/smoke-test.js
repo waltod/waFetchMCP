@@ -11,6 +11,12 @@ const server = createServer((request, response) => {
     response.end(JSON.stringify({ result: { items: [{ name: "ok" }] } }));
     return;
   }
+  if (request.url?.startsWith("/suggest/")) {
+    const id = request.url.split("/").pop();
+    response.writeHead(200, { "content-type": "application/json" });
+    response.end(JSON.stringify({ id, title: `Title ${id}` }));
+    return;
+  }
   if (request.url === "/blocked") {
     response.writeHead(403, {
       "content-type": "text/html; charset=utf-8",
@@ -40,6 +46,9 @@ Sitemap: http://example.test/sitemap.xml`);
     <meta property="og:image" content="/assets/preview.png">
     <meta property="og:image:alt" content="Preview image">
     <a href="/json">JSON endpoint</a>
+    <a href="/title/tt0000001/">Title 1</a>
+    <a href="/title/tt0000001/">Title 1 duplicate</a>
+    <a href="/title/tt0000002/">Title 2</a>
     <script type="application/ld+json">{"@context":"https://schema.org","@type":"WebPage","name":"Fetcher Smoke"}</script>
     <script src="/assets/app.js"></script>
     <script>window.api = "/api/products/search";</script>
@@ -137,6 +146,62 @@ try {
   });
   if (functionResult.result.name !== "ok") {
     throw new Error("run_fetcher_function workflow test failed.");
+  }
+
+  const batchResult = await runFetcherFunction({
+    definition: {
+      name: "smoke-batch-json-workflow",
+      inputSchema: {
+        baseUrl: { required: true }
+      },
+      steps: [
+        {
+          id: "page",
+          op: "fetch_url",
+          input: {
+            url: "{{baseUrl}}/",
+            responseType: "text"
+          }
+        },
+        {
+          id: "ids",
+          op: "regex",
+          from: "steps.page.text",
+          pattern: "\\/title\\/(tt\\d+)\\/",
+          group: 1
+        },
+        {
+          id: "uniqueIds",
+          op: "unique",
+          from: "steps.ids",
+          maxItems: 2
+        },
+        {
+          id: "details",
+          op: "fetch_each_json",
+          from: "steps.uniqueIds",
+          input: {
+            url: "{{baseUrl}}/suggest/{{item}}"
+          },
+          maxItems: 2,
+          concurrency: 2
+        },
+        {
+          id: "titles",
+          op: "map",
+          from: "steps.details",
+          value: "$item.json.title"
+        }
+      ],
+      returns: {
+        ids: "$steps.uniqueIds",
+        titles: "$steps.titles"
+      }
+    },
+    args: { baseUrl }
+  });
+  if (batchResult.result.ids.length !== 2 || batchResult.result.titles[0] !== "Title tt0000001") {
+    throw new Error("batch fetch workflow test failed.");
   }
 
   console.log("waFetchMCP smoke test passed.");
