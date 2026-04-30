@@ -44,10 +44,14 @@ When challenge detection reports CAPTCHA, login, access denial, bot verification
 IMDb title pages may return Amazon WAF challenge responses to direct HTTP clients. The bundled IMDb example uses IMDb's public no-key suggestion JSON endpoint instead of trying to bypass the HTML challenge.
 
 ```bash
+npm run cli -- run-function imdb-title-search --arg "query=Breaking Bad" --arg limit=5 --trace
+npm run cli -- run-function imdb-title-inspect --arg "query=Breaking Bad" --trace
 npm run cli -- run-function imdb-title-suggestion --arg titleId=tt0133093 --trace
 npm run cli -- run-function imdb-genre-scraper --arg filter=action --arg limit=5 --trace
 ```
 
+- `imdb-title-search` searches IMDb's public suggestion endpoint by text and returns normalized matches.
+- `imdb-title-inspect` resolves the top search result, then probes the title, episodes, and full-credit pages to surface structured data or challenge signals.
 - `imdb-title-suggestion` returns one normalized title match with title, year, type, cast summary, rank, image metadata, and canonical IMDb URL.
 - `imdb-genre-scraper` adapts [`Xplit495/imdb-scraper`](https://github.com/Xplit495/imdb-scraper): it discovers title ids from IMDb's genre chart page, deduplicates them, then enriches each through IMDb's public suggestion JSON endpoint.
 - If a direct IMDb page fetch is attempted separately and returns an Amazon WAF challenge header, waFetchMCP reports it as a `bot_challenge` signal.

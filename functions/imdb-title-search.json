@@ -1,0 +1,65 @@
+{
+  "name": "imdb-title-search",
+  "description": "Search IMDb titles through IMDb's public no-key suggestion JSON endpoint and return normalized title matches.",
+  "version": "0.1.0",
+  "inputSchema": {
+    "query": {
+      "type": "string",
+      "required": true,
+      "description": "Search text, for example Breaking Bad."
+    },
+    "limit": {
+      "type": "number",
+      "required": false,
+      "description": "Maximum matches to return. Defaults to 10."
+    }
+  },
+  "steps": [
+    {
+      "id": "api",
+      "op": "fetch_json",
+      "input": {
+        "url": "https://v2.sg.media-imdb.com/suggestion/{{query|lower|firstchar|urlencode}}/{{query|lower|urlencode}}.json",
+        "headers": {
+          "accept": "application/json"
+        },
+        "maxBytes": 1048576
+      }
+    },
+    {
+      "id": "items",
+      "op": "json_path",
+      "from": "steps.api.json",
+      "path": "d"
+    },
+    {
+      "id": "results",
+      "op": "map",
+      "from": "steps.items",
+      "maxItems": "{{limit|10}}",
+      "value": {
+        "ranking": "$rank",
+        "titleId": "$item.id",
+        "title": "$item.l",
+        "type": "$item.q",
+        "typeId": "$item.qid",
+        "year": "$item.y",
+        "yearRange": "$item.yr",
+        "castSummary": "$item.s",
+        "imdbRank": "$item.rank",
+        "image": "$item.i",
+        "titleUrl": "https://www.imdb.com/title/{{item.id|urlencode}}/"
+      }
+    }
+  ],
+  "returns": {
+    "source": "imdb-suggestion-search",
+    "query": "{{query}}",
+    "status": "$steps.api.status",
+    "ok": "$steps.api.ok",
+    "challenge": "$steps.api.challenge",
+    "count": "$steps.results.length",
+    "topResult": "$steps.results.0",
+    "results": "$steps.results"
+  }
+}

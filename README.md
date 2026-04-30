@@ -74,6 +74,8 @@ Example | Command
 Fandom page list | `npm run cli -- run-function fandom-allpages --arg wiki=harrypotter --arg limit=3`
 Fandom page HTML | `npm run cli -- run-function fandom-page-html --arg wiki=harrypotter --arg "title=Harry Potter"`
 IMDb title suggestion | `npm run cli -- run-function imdb-title-suggestion --arg titleId=tt0133093`
+IMDb title search | `npm run cli -- run-function imdb-title-search --arg "query=Breaking Bad" --arg limit=5`
+IMDb title inspect | `npm run cli -- run-function imdb-title-inspect --arg "query=Breaking Bad" --trace`
 IMDb genre scraper | `npm run cli -- run-function imdb-genre-scraper --arg filter=action --arg limit=5 --trace`
 LCSC concise search | `npm run cli -- run-function lcsc-search-list --arg "keyword=ESPRESSIF ESP32-S3" --arg limit=5`
 LCSC product detail | `npm run cli -- run-function lcsc-product-detail --arg productCode=C2980297`
@@ -103,6 +105,8 @@ Saved functions are data-only JSON files in [`functions/`](functions). Supported
 fetch_url, fetch_json, fetch_each_url, fetch_each_json,
 discover_page, get_robots_txt, json_path, regex, unique, map, template
 ```
+
+Templates support `lower`, `upper`, `urlencode`, and `firstchar` filters.
 
 See [`functions/README.md`](functions/README.md) for bundled workflows and command examples.
 

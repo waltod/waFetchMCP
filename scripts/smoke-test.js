@@ -121,7 +121,8 @@ try {
     definition: {
       name: "smoke-json-workflow",
       inputSchema: {
-        baseUrl: { required: true }
+        baseUrl: { required: true },
+        query: { required: true }
       },
       steps: [
         {
@@ -136,15 +137,21 @@ try {
           op: "json_path",
           from: "steps.api.json",
           path: "result.items[0].name"
+        },
+        {
+          id: "initial",
+          op: "template",
+          value: "{{query|lower|firstchar}}"
         }
       ],
       returns: {
-        name: "$steps.name"
+        name: "$steps.name",
+        initial: "$steps.initial"
       }
     },
-    args: { baseUrl }
+    args: { baseUrl, query: "Breaking Bad" }
   });
-  if (functionResult.result.name !== "ok") {
+  if (functionResult.result.name !== "ok" || functionResult.result.initial !== "b") {
     throw new Error("run_fetcher_function workflow test failed.");
   }
 

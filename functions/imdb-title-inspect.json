@@ -1,0 +1,104 @@
+{
+  "name": "imdb-title-inspect",
+  "description": "Search an IMDb title, return the top suggestion metadata, and probe title/episodes/full-credits pages for structured data or challenge signals.",
+  "version": "0.1.0",
+  "inputSchema": {
+    "query": {
+      "type": "string",
+      "required": true,
+      "description": "Search text, for example Breaking Bad."
+    }
+  },
+  "steps": [
+    {
+      "id": "api",
+      "op": "fetch_json",
+      "input": {
+        "url": "https://v2.sg.media-imdb.com/suggestion/{{query|lower|firstchar|urlencode}}/{{query|lower|urlencode}}.json",
+        "headers": {
+          "accept": "application/json"
+        },
+        "maxBytes": 1048576
+      }
+    },
+    {
+      "id": "items",
+      "op": "json_path",
+      "from": "steps.api.json",
+      "path": "d"
+    },
+    {
+      "id": "match",
+      "op": "json_path",
+      "from": "steps.items",
+      "path": "0"
+    },
+    {
+      "id": "titlePage",
+      "op": "discover_page",
+      "input": {
+        "url": "https://www.imdb.com/title/{{steps.match.id|urlencode}}/",
+        "maxBytes": 2097152
+      }
+    },
+    {
+      "id": "episodesPage",
+      "op": "fetch_url",
+      "input": {
+        "url": "https://www.imdb.com/title/{{steps.match.id|urlencode}}/episodes/",
+        "responseType": "text",
+        "maxBytes": 2097152
+      }
+    },
+    {
+      "id": "creditsPage",
+      "op": "fetch_url",
+      "input": {
+        "url": "https://www.imdb.com/title/{{steps.match.id|urlencode}}/fullcredits/",
+        "responseType": "text",
+        "maxBytes": 2097152
+      }
+    }
+  ],
+  "returns": {
+    "source": "imdb-title-inspect",
+    "query": "{{query}}",
+    "suggestionStatus": "$steps.api.status",
+    "suggestionChallenge": "$steps.api.challenge",
+    "resolved": {
+      "titleId": "$steps.match.id",
+      "title": "$steps.match.l",
+      "type": "$steps.match.q",
+      "typeId": "$steps.match.qid",
+      "year": "$steps.match.y",
+      "yearRange": "$steps.match.yr",
+      "castSummary": "$steps.match.s",
+      "imdbRank": "$steps.match.rank",
+      "image": "$steps.match.i",
+      "titleUrl": "https://www.imdb.com/title/{{steps.match.id|urlencode}}/"
+    },
+    "directPages": {
+      "title": {
+        "url": "$steps.titlePage.finalUrl",
+        "status": "$steps.titlePage.status",
+        "challenge": "$steps.titlePage.challenge",
+        "title": "$steps.titlePage.title",
+        "jsonLd": "$steps.titlePage.jsonLd",
+        "openGraph": "$steps.titlePage.openGraph"
+      },
+      "episodes": {
+        "url": "$steps.episodesPage.finalUrl",
+        "status": "$steps.episodesPage.status",
+        "bytesRead": "$steps.episodesPage.bytesRead",
+        "challenge": "$steps.episodesPage.challenge"
+      },
+      "fullCredits": {
+        "url": "$steps.creditsPage.finalUrl",
+        "status": "$steps.creditsPage.status",
+        "bytesRead": "$steps.creditsPage.bytesRead",
+        "challenge": "$steps.creditsPage.challenge"
+      }
+    },
+    "note": "IMDb suggestion JSON is available in direct HTTP. In this environment, deeper title pages may return Amazon WAF challenge responses; waFetchMCP reports those signals and does not bypass them."
+  }
+}

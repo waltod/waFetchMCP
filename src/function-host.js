@@ -265,7 +265,7 @@ function resolveTemplateString(value, context) {
 }
 
 function isTemplateFilter(value) {
-  return ["urlencode", "lower", "upper"].includes(String(value || "").toLowerCase());
+  return ["urlencode", "lower", "upper", "firstchar"].includes(String(value || "").toLowerCase());
 }
 
 function applyTemplateFilter(value, filter) {
@@ -278,6 +278,9 @@ function applyTemplateFilter(value, filter) {
   }
   if (normalized === "upper") {
     return value.toUpperCase();
+  }
+  if (normalized === "firstchar") {
+    return value.trim().charAt(0);
   }
   return value;
 }
