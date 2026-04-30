@@ -31,8 +31,9 @@ Node.js 18+ is required.
 
 Client | Setup
 --- | ---
-Codex | [Codex config example](docs/INSTALL-CODEX-CLAUDE.md#codex)
-Claude Desktop | [Claude Desktop config example](docs/INSTALL-CODEX-CLAUDE.md#claude-desktop)
+Codex CLI / IDE | [One-command install](docs/INSTALL-CODEX-CLAUDE.md#codex)
+Claude, OpenCode, Cursor, VS Code | [MCP client install guide](docs/INSTALL-CODEX-CLAUDE.md)
+Open WebUI / cloud UI | [HTTP bridge notes](docs/INSTALL-CODEX-CLAUDE.md#open-webui-and-cloud-uis)
 CLI | Use `npm run cli -- <command>` from the repo
 Workflow board | [waFetchMCP workflow](docs/wafetchmcp-workflow.md)
 Function examples | [Bundled functions](functions/README.md)
@@ -133,7 +134,7 @@ CI runs the same smoke tests on Node 18, 20, and 22.
 
 ## Links
 
-- [Full Codex and Claude setup](docs/INSTALL-CODEX-CLAUDE.md)
+- [MCP client install guide](docs/INSTALL-CODEX-CLAUDE.md)
 - [Bundled workflow functions](functions/README.md)
 - [Workflow board source](docs/wafetchmcp-workflow.md)
 - [Issues](https://github.com/waltod/waFetchMCP/issues)

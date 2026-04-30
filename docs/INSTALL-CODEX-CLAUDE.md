@@ -1,83 +1,388 @@
-# Installing waFetchMCP in Codex and Claude
+# Installing waFetchMCP in MCP Clients
 
-This guide shows how to install waFetchMCP as a local stdio MCP server.
+This guide covers local stdio installation for current MCP clients. Use the client CLI when one exists; otherwise paste the JSON/YAML config.
 
-## Prerequisites
+Assume this checkout:
 
-- Node.js 18 or newer.
-- A local checkout of waFetchMCP.
-- Dependencies installed with `npm install`.
-
-```bash
-git clone https://github.com/waltod/waFetchMCP.git
-cd waFetchMCP
+```powershell
+git clone https://github.com/waltod/waFetchMCP.git C:\MCP\waFetchMCP
+cd C:\MCP\waFetchMCP
 npm install
 npm test
 ```
 
-Use the absolute path to `src/mcp-server.js` in your MCP client config.
+Server command:
 
-waFetchMCP is a direct HTTP fetcher. It can report challenge-like signals and inspect robots.txt, JSON-LD, and OpenGraph metadata during discovery, but it does not bypass CAPTCHA, login walls, bot checks, or other access controls.
+```text
+node C:\MCP\waFetchMCP\src\mcp-server.js
+```
+
+Replace `C:\MCP\waFetchMCP` with your absolute checkout path on macOS/Linux.
+
+## Fast Install Matrix
+
+Client | Best current path
+--- | ---
+Codex CLI / Codex IDE | `codex mcp add`
+Claude Code | `claude mcp add`
+Claude Desktop | `claude_desktop_config.json`
+Gemini CLI | `gemini mcp add`
+OpenCode | `opencode.jsonc`
+Cursor | `.cursor/mcp.json` or `~/.cursor/mcp.json`
+VS Code / Copilot Agent Mode | `code --add-mcp` or `.vscode/mcp.json`
+GitHub Copilot CLI / cloud agent | `/mcp add`, `~/.copilot/mcp-config.json`, or repo Cloud agent settings
+Windsurf Cascade | `~/.codeium/windsurf/mcp_config.json`
+Cline | MCP Servers UI or `cline_mcp_settings.json`
+Continue | `.continue/mcpServers/*.yaml` or copied MCP JSON
+Roo Code | MCP Servers UI / `mcp_settings.json`
+Zed | `context_servers` in Zed settings
+Open WebUI / cloud UI | Use `mcpo` bridge or a hosted Streamable HTTP MCP server
 
 ## Codex
 
-Codex reads MCP servers from `config.toml`.
+Preferred CLI install:
 
-Common config locations:
+```powershell
+codex mcp add waFetchMCP --env FETCHER_MAX_BYTES=1048576 --env FETCHER_TIMEOUT_MS=30000 --env FETCHER_FUNCTIONS_DIR=C:\MCP\waFetchMCP\functions -- node C:\MCP\waFetchMCP\src\mcp-server.js
+codex mcp list
+codex mcp get waFetchMCP
+```
 
-- Windows: `C:\Users\<you>\.codex\config.toml`
-- macOS/Linux: `~/.codex/config.toml`
+Remove:
 
-Add this block:
+```powershell
+codex mcp remove waFetchMCP
+```
+
+Manual fallback in `~/.codex/config.toml`:
 
 ```toml
 [mcp_servers.waFetchMCP]
 command = "node"
-args = ["C:\\path\\to\\waFetchMCP\\src\\mcp-server.js"]
+args = ["C:\\MCP\\waFetchMCP\\src\\mcp-server.js"]
 startup_timeout_sec = 30.0
 tool_timeout_sec = 120.0
 
 [mcp_servers.waFetchMCP.env]
 FETCHER_MAX_BYTES = "1048576"
 FETCHER_TIMEOUT_MS = "30000"
-FETCHER_FUNCTIONS_DIR = "C:\\path\\to\\waFetchMCP\\functions"
+FETCHER_FUNCTIONS_DIR = "C:\\MCP\\waFetchMCP\\functions"
 ```
 
-Windows example:
+## Claude Code
 
-```toml
-[mcp_servers.waFetchMCP]
-command = "node"
-args = ['C:\MCP\waFetchMCP\src\mcp-server.js']
-startup_timeout_sec = 30.0
-tool_timeout_sec = 120.0
+User-wide install:
 
-[mcp_servers.waFetchMCP.env]
-FETCHER_MAX_BYTES = "1048576"
-FETCHER_TIMEOUT_MS = "30000"
-FETCHER_FUNCTIONS_DIR = 'C:\MCP\waFetchMCP\functions'
+```powershell
+claude mcp add --scope user -e FETCHER_MAX_BYTES=1048576 -e FETCHER_TIMEOUT_MS=30000 -e FETCHER_FUNCTIONS_DIR=C:\MCP\waFetchMCP\functions waFetchMCP -- node C:\MCP\waFetchMCP\src\mcp-server.js
+claude mcp list
+claude mcp get waFetchMCP
 ```
 
-macOS/Linux example:
+Project-shared install:
 
-```toml
-[mcp_servers.waFetchMCP]
-command = "node"
-args = ["/Users/you/MCP/waFetchMCP/src/mcp-server.js"]
-startup_timeout_sec = 30.0
-tool_timeout_sec = 120.0
-
-[mcp_servers.waFetchMCP.env]
-FETCHER_MAX_BYTES = "1048576"
-FETCHER_TIMEOUT_MS = "30000"
-FETCHER_FUNCTIONS_DIR = "/Users/you/MCP/waFetchMCP/functions"
+```powershell
+claude mcp add --scope project -e FETCHER_FUNCTIONS_DIR=C:\MCP\waFetchMCP\functions waFetchMCP -- node C:\MCP\waFetchMCP\src\mcp-server.js
 ```
 
-Restart Codex after editing the config.
+Claude Code stores project-scoped servers in `.mcp.json` and user-scoped servers in `~/.claude.json`.
 
-### Verify in Codex
+## Claude Desktop
 
-Ask Codex to list available MCP tools or run:
+Edit `claude_desktop_config.json`.
+
+Windows:
+
+```text
+%APPDATA%\Claude\claude_desktop_config.json
+```
+
+macOS:
+
+```text
+~/Library/Application Support/Claude/claude_desktop_config.json
+```
+
+Config:
+
+```json
+{
+  "mcpServers": {
+    "waFetchMCP": {
+      "command": "node",
+      "args": ["C:\\MCP\\waFetchMCP\\src\\mcp-server.js"],
+      "env": {
+        "FETCHER_MAX_BYTES": "1048576",
+        "FETCHER_TIMEOUT_MS": "30000",
+        "FETCHER_FUNCTIONS_DIR": "C:\\MCP\\waFetchMCP\\functions"
+      }
+    }
+  }
+}
+```
+
+Restart Claude Desktop.
+
+## Gemini CLI
+
+Preferred CLI install:
+
+```powershell
+gemini mcp add -s user -e FETCHER_MAX_BYTES=1048576 -e FETCHER_TIMEOUT_MS=30000 -e FETCHER_FUNCTIONS_DIR=C:\MCP\waFetchMCP\functions waFetchMCP node C:\MCP\waFetchMCP\src\mcp-server.js
+```
+
+Manual fallback in `~/.gemini/settings.json`:
+
+```json
+{
+  "mcpServers": {
+    "waFetchMCP": {
+      "command": "node",
+      "args": ["C:\\MCP\\waFetchMCP\\src\\mcp-server.js"],
+      "env": {
+        "FETCHER_FUNCTIONS_DIR": "C:\\MCP\\waFetchMCP\\functions"
+      },
+      "timeout": 30000
+    }
+  }
+}
+```
+
+Verify inside Gemini CLI:
+
+```text
+/mcp
+```
+
+## OpenCode
+
+Add to `opencode.jsonc`:
+
+```jsonc
+{
+  "$schema": "https://opencode.ai/config.json",
+  "mcp": {
+    "waFetchMCP": {
+      "type": "local",
+      "command": ["node", "C:\\MCP\\waFetchMCP\\src\\mcp-server.js"],
+      "enabled": true,
+      "environment": {
+        "FETCHER_FUNCTIONS_DIR": "C:\\MCP\\waFetchMCP\\functions"
+      }
+    }
+  }
+}
+```
+
+## Cursor
+
+Project config:
+
+```text
+.cursor/mcp.json
+```
+
+Global config:
+
+```text
+~/.cursor/mcp.json
+```
+
+Config:
+
+```json
+{
+  "mcpServers": {
+    "waFetchMCP": {
+      "command": "node",
+      "args": ["C:\\MCP\\waFetchMCP\\src\\mcp-server.js"],
+      "env": {
+        "FETCHER_FUNCTIONS_DIR": "C:\\MCP\\waFetchMCP\\functions"
+      }
+    }
+  }
+}
+```
+
+## VS Code / GitHub Copilot Agent Mode
+
+Install with the `code` CLI:
+
+```powershell
+code --add-mcp "{\"name\":\"waFetchMCP\",\"command\":\"node\",\"args\":[\"C:\\MCP\\waFetchMCP\\src\\mcp-server.js\"],\"env\":{\"FETCHER_FUNCTIONS_DIR\":\"C:\\MCP\\waFetchMCP\\functions\"}}"
+```
+
+Workspace fallback in `.vscode/mcp.json`:
+
+```json
+{
+  "servers": {
+    "waFetchMCP": {
+      "type": "stdio",
+      "command": "node",
+      "args": ["C:\\MCP\\waFetchMCP\\src\\mcp-server.js"],
+      "env": {
+        "FETCHER_FUNCTIONS_DIR": "C:\\MCP\\waFetchMCP\\functions"
+      }
+    }
+  }
+}
+```
+
+Then open Copilot Chat in Agent Mode and enable the server in the tools picker.
+
+## GitHub Copilot CLI And Cloud Agent
+
+Copilot CLI interactive install:
+
+```text
+/mcp add
+```
+
+Choose `STDIO`, set command to `node C:\MCP\waFetchMCP\src\mcp-server.js`, and set environment variables as JSON.
+
+Manual user config in `~/.copilot/mcp-config.json`:
+
+```json
+{
+  "mcpServers": {
+    "waFetchMCP": {
+      "type": "stdio",
+      "command": "node",
+      "args": ["C:\\MCP\\waFetchMCP\\src\\mcp-server.js"],
+      "env": {
+        "FETCHER_FUNCTIONS_DIR": "C:\\MCP\\waFetchMCP\\functions"
+      },
+      "tools": ["*"]
+    }
+  }
+}
+```
+
+For Copilot cloud agent, paste the same `mcpServers` shape in repository Settings, Copilot, Cloud agent. A stdio server must be installable inside the agent environment; otherwise expose waFetchMCP over Streamable HTTP.
+
+## Windsurf Cascade
+
+Edit:
+
+```text
+~/.codeium/windsurf/mcp_config.json
+```
+
+Config:
+
+```json
+{
+  "mcpServers": {
+    "waFetchMCP": {
+      "command": "node",
+      "args": ["C:\\MCP\\waFetchMCP\\src\\mcp-server.js"],
+      "env": {
+        "FETCHER_FUNCTIONS_DIR": "C:\\MCP\\waFetchMCP\\functions"
+      }
+    }
+  }
+}
+```
+
+## Cline
+
+Use the MCP Servers icon, then Configure, or edit `cline_mcp_settings.json`:
+
+```json
+{
+  "mcpServers": {
+    "waFetchMCP": {
+      "command": "node",
+      "args": ["C:\\MCP\\waFetchMCP\\src\\mcp-server.js"],
+      "env": {
+        "FETCHER_FUNCTIONS_DIR": "C:\\MCP\\waFetchMCP\\functions"
+      },
+      "disabled": false
+    }
+  }
+}
+```
+
+## Continue
+
+Create `.continue/mcpServers/wafetchmcp.yaml`:
+
+```yaml
+name: waFetchMCP
+version: 0.1.0
+schema: v1
+mcpServers:
+  - name: waFetchMCP
+    type: stdio
+    command: node
+    args:
+      - 'C:\MCP\waFetchMCP\src\mcp-server.js'
+    env:
+      FETCHER_FUNCTIONS_DIR: 'C:\MCP\waFetchMCP\functions'
+```
+
+Continue can also read standard MCP JSON copied into `.continue/mcpServers/`.
+
+## Roo Code
+
+Use MCP Servers, then Edit Global MCPs. Roo uses the same `mcpServers` JSON shape as Cline:
+
+```json
+{
+  "mcpServers": {
+    "waFetchMCP": {
+      "command": "node",
+      "args": ["C:\\MCP\\waFetchMCP\\src\\mcp-server.js"],
+      "env": {
+        "FETCHER_FUNCTIONS_DIR": "C:\\MCP\\waFetchMCP\\functions"
+      },
+      "disabled": false
+    }
+  }
+}
+```
+
+Roo Code's own docs currently announce a May 15, 2026 shutdown, so prefer Cline for new long-lived setups.
+
+## Zed
+
+Add a custom context server in Zed settings:
+
+```json
+{
+  "context_servers": {
+    "waFetchMCP": {
+      "command": "node",
+      "args": ["C:\\MCP\\waFetchMCP\\src\\mcp-server.js"],
+      "env": {
+        "FETCHER_FUNCTIONS_DIR": "C:\\MCP\\waFetchMCP\\functions"
+      }
+    }
+  }
+}
+```
+
+Then check the Agent Panel settings indicator for the server.
+
+## Open WebUI And Cloud UIs
+
+waFetchMCP currently ships as a stdio MCP server. Browser/cloud UIs usually cannot launch local stdio processes directly.
+
+Open WebUI native MCP support expects Streamable HTTP. For waFetchMCP today, use Open WebUI's `mcpo` bridge to expose the stdio server as OpenAPI:
+
+```powershell
+$env:FETCHER_FUNCTIONS_DIR="C:\MCP\waFetchMCP\functions"
+uvx mcpo --port 8000 --api-key "top-secret" -- node C:\MCP\waFetchMCP\src\mcp-server.js
+```
+
+Then add the generated OpenAPI server in Open WebUI's Admin Settings / External Tools, using the same API key.
+
+For other cloud UIs, the rule is the same: either the UI must support stdio on the same machine, or you need to deploy/bridge waFetchMCP behind an HTTP transport.
+
+## Verify
+
+Ask the client:
 
 ```text
 Use waFetchMCP to list saved fetcher functions.
@@ -93,134 +398,29 @@ Expected tools include:
 - `run_fetcher_function`
 - `save_fetcher_function`
 
-After setup, a useful smoke prompt is:
-
-```text
-Use waFetchMCP to discover https://example.com and summarize title, robots, OpenGraph, JSON-LD, endpoints, and any challenge signals.
-```
-
-## Claude Desktop
-
-Claude Desktop reads MCP servers from `claude_desktop_config.json`.
-
-Common config locations:
-
-- Windows: `%APPDATA%\Claude\claude_desktop_config.json`
-- macOS: `~/Library/Application Support/Claude/claude_desktop_config.json`
-
-Add `waFetchMCP` under `mcpServers`:
-
-```json
-{
-  "mcpServers": {
-    "waFetchMCP": {
-      "command": "node",
-      "args": [
-        "C:\\path\\to\\waFetchMCP\\src\\mcp-server.js"
-      ],
-      "env": {
-        "FETCHER_MAX_BYTES": "1048576",
-        "FETCHER_TIMEOUT_MS": "30000",
-        "FETCHER_FUNCTIONS_DIR": "C:\\path\\to\\waFetchMCP\\functions"
-      }
-    }
-  }
-}
-```
-
-Windows example:
-
-```json
-{
-  "mcpServers": {
-    "waFetchMCP": {
-      "command": "node",
-      "args": [
-        "C:\\MCP\\waFetchMCP\\src\\mcp-server.js"
-      ],
-      "env": {
-        "FETCHER_MAX_BYTES": "1048576",
-        "FETCHER_TIMEOUT_MS": "30000",
-        "FETCHER_FUNCTIONS_DIR": "C:\\MCP\\waFetchMCP\\functions"
-      }
-    }
-  }
-}
-```
-
-macOS example:
-
-```json
-{
-  "mcpServers": {
-    "waFetchMCP": {
-      "command": "node",
-      "args": [
-        "/Users/you/MCP/waFetchMCP/src/mcp-server.js"
-      ],
-      "env": {
-        "FETCHER_MAX_BYTES": "1048576",
-        "FETCHER_TIMEOUT_MS": "30000",
-        "FETCHER_FUNCTIONS_DIR": "/Users/you/MCP/waFetchMCP/functions"
-      }
-    }
-  }
-}
-```
-
-Restart Claude Desktop after editing the config.
-
-### Verify in Claude
-
-Open a new Claude chat and ask:
-
-```text
-Use waFetchMCP to list saved fetcher functions.
-```
-
-Claude should be able to call `list_fetcher_functions` and show bundled functions such as `fandom-allpages` and `fandom-page-html`.
-
-If your checkout includes LCSC-style catalog examples, they will appear in the same function list. The exact names may differ by package version, so prefer `list_fetcher_functions` before running an example.
-
 ## Optional Safety Settings
 
-waFetchMCP is public-web only by default. These settings should be enabled only when needed:
+Keep these disabled unless you intentionally need them:
 
-```toml
-FETCHER_ALLOW_PRIVATE = "true"
-FETCHER_ALLOW_AUTH_HEADER = "true"
+```text
+FETCHER_ALLOW_PRIVATE=true
+FETCHER_ALLOW_AUTH_HEADER=true
 ```
 
-Meaning:
+## References Checked
 
-- `FETCHER_ALLOW_PRIVATE=true` allows localhost and private network fetches.
-- `FETCHER_ALLOW_AUTH_HEADER=true` allows outgoing `Authorization` headers.
-
-Leave both disabled for normal public website exploration.
-
-## Discovery And Compliance Notes
-
-- Use `discover_page` before saving a new workflow for an unknown site.
-- Inspect `robots` output and respect crawl guidance before repeated fetching.
-- Use JSON-LD and OpenGraph output when it provides enough structured metadata; it is usually more stable than scraping visible page text.
-- Treat `challenge` output as diagnostic information. waFetchMCP reports CAPTCHA, bot-check, login, access-denied, and JavaScript verification signals, but it does not bypass them.
-- For sites that legitimately require browser interaction, handle that outside waFetchMCP with a site-approved browser workflow, authenticated integration, or official API.
-
-## Troubleshooting
-
-If the MCP server does not appear:
-
-1. Confirm Node is on PATH: `node --version`.
-2. Run `npm test` inside the waFetchMCP directory.
-3. Use absolute paths in config.
-4. Restart the MCP client after config changes.
-5. Check client logs for JSON or TOML syntax errors.
-6. Confirm the configured `FETCHER_FUNCTIONS_DIR` exists.
-
-If a fetch is blocked:
-
-- The URL may resolve to a private or local IP.
-- The protocol may not be `http` or `https`.
-- The response may exceed `FETCHER_MAX_BYTES`.
-- `discover_page` may have detected a challenge, login gate, or robots policy. Decide the site-specific handling in your workflow.
-- The server may require browser JavaScript execution; handle that outside waFetchMCP when appropriate for the site.
+- OpenAI Codex MCP docs: https://developers.openai.com/codex/mcp
+- Anthropic Claude Code MCP docs: https://docs.anthropic.com/en/docs/claude-code/mcp
+- Gemini CLI MCP docs: https://google-gemini.github.io/gemini-cli/docs/tools/mcp-server.html
+- OpenCode MCP docs: https://opencode.ai/docs/mcp-servers
+- Cursor MCP docs: https://docs.cursor.com/advanced/model-context-protocol
+- VS Code MCP docs: https://code.visualstudio.com/docs/copilot/customization/mcp-servers
+- GitHub Copilot CLI MCP docs: https://docs.github.com/en/copilot/how-tos/copilot-cli/customize-copilot/add-mcp-servers
+- GitHub Copilot cloud agent MCP docs: https://docs.github.com/en/copilot/how-tos/use-copilot-agents/coding-agent/extend-coding-agent-with-mcp
+- Windsurf Cascade MCP docs: https://docs.windsurf.com/windsurf/cascade/mcp
+- Cline MCP docs: https://docs.cline.bot/mcp/adding-and-configuring-servers
+- Continue MCP docs: https://docs.continue.dev/customize/deep-dives/mcp
+- Roo Code docs: https://docs.roocode.com
+- Zed MCP docs: https://zed.dev/docs/ai/mcp
+- Open WebUI MCP docs: https://docs.openwebui.com/features/mcp
+- Open WebUI mcpo docs: https://docs.openwebui.com/features/extensibility/plugin/tools/openapi-servers/mcp/
