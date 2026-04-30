@@ -1,6 +1,8 @@
 # waFetchMCP
 
-Generic MCP server for safe public-web fetching and reusable declarative fetch workflows.
+![waFetchMCP social preview](docs/assets/wafetchmcp-social-preview.png)
+
+Lightweight MCP server for safe public-web fetching and reusable declarative web workflows.
 
 Use it when an agent needs to inspect an unknown page, call a public JSON endpoint, check robots.txt, or save a repeatable scraper-like workflow without writing a custom MCP server.
 
