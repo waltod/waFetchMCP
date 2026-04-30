@@ -1,0 +1,48 @@
+{
+  "name": "wafetchmcp",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "A generic MCP fetcher and declarative workflow host for reusable web fetch functions.",
+  "license": "MIT",
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "fetch",
+    "scraping",
+    "workflow",
+    "agent"
+  ],
+  "scripts": {
+    "cli": "node src/cli.js",
+    "mcp": "node src/mcp-server.js",
+    "smoke": "node scripts/smoke-test.js",
+    "mcp-smoke": "node scripts/mcp-smoke-test.js",
+    "test": "npm run smoke && npm run mcp-smoke"
+  },
+  "bin": {
+    "wafetchmcp": "src/cli.js"
+  },
+  "files": [
+    "src",
+    "scripts",
+    "functions",
+    "docs",
+    "README.md",
+    "LICENSE"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/waltod/waFetchMCP.git"
+  },
+  "bugs": {
+    "url": "https://github.com/waltod/waFetchMCP/issues"
+  },
+  "homepage": "https://github.com/waltod/waFetchMCP#readme",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.17.5",
+    "zod": "^3.23.8"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

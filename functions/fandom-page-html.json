@@ -1,0 +1,52 @@
+{
+  "name": "fandom-page-html",
+  "description": "Fetch parsed HTML and basic metadata for a Fandom wiki page through the MediaWiki parse API.",
+  "version": "0.1.0",
+  "inputSchema": {
+    "wiki": {
+      "type": "string",
+      "required": true,
+      "description": "Fandom subdomain, for example harrypotter."
+    },
+    "title": {
+      "type": "string",
+      "required": true,
+      "description": "Page title."
+    }
+  },
+  "steps": [
+    {
+      "id": "api",
+      "op": "fetch_json",
+      "input": {
+        "url": "https://{{wiki|lower}}.fandom.com/api.php?action=parse&page={{title|urlencode}}&prop=text|displaytitle|categories|links&format=json&origin=*",
+        "maxBytes": 2097152
+      }
+    },
+    {
+      "id": "html",
+      "op": "json_path",
+      "from": "steps.api.json",
+      "path": "parse.text.*"
+    },
+    {
+      "id": "displayTitle",
+      "op": "json_path",
+      "from": "steps.api.json",
+      "path": "parse.displaytitle"
+    },
+    {
+      "id": "links",
+      "op": "json_path",
+      "from": "steps.api.json",
+      "path": "parse.links"
+    }
+  ],
+  "returns": {
+    "wiki": "{{wiki}}",
+    "title": "{{title}}",
+    "displayTitle": "$steps.displayTitle",
+    "html": "$steps.html",
+    "links": "$steps.links"
+  }
+}

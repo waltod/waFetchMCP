@@ -1,0 +1,56 @@
+{
+  "name": "fandom-allpages",
+  "description": "Fetch one batch of article titles from a Fandom wiki through its MediaWiki allpages API.",
+  "version": "0.1.0",
+  "inputSchema": {
+    "wiki": {
+      "type": "string",
+      "required": true,
+      "description": "Fandom subdomain, for example harrypotter for harrypotter.fandom.com."
+    },
+    "limit": {
+      "type": "number",
+      "required": false,
+      "description": "Batch size, default 50."
+    },
+    "continue": {
+      "type": "string",
+      "required": false,
+      "description": "Optional apcontinue value from a previous result."
+    }
+  },
+  "steps": [
+    {
+      "id": "api",
+      "op": "fetch_json",
+      "input": {
+        "url": "https://{{wiki|lower}}.fandom.com/api.php?action=query&list=allpages&apnamespace=0&aplimit={{limit|50}}&apcontinue={{continue|urlencode}}&format=json&origin=*",
+        "maxBytes": 1048576
+      }
+    },
+    {
+      "id": "pages",
+      "op": "json_path",
+      "from": "steps.api.json",
+      "path": "query.allpages"
+    },
+    {
+      "id": "titles",
+      "op": "map",
+      "from": "steps.pages",
+      "path": "item.title"
+    },
+    {
+      "id": "next",
+      "op": "json_path",
+      "from": "steps.api.json",
+      "path": "continue.apcontinue"
+    }
+  ],
+  "returns": {
+    "wiki": "{{wiki}}",
+    "count": "$steps.titles.length",
+    "titles": "$steps.titles",
+    "nextContinue": "$steps.next"
+  }
+}

@@ -1,0 +1,71 @@
+{
+  "name": "lcsc-search",
+  "description": "Search LCSC products through the public no-key web endpoint used by lcsc-fetcher scrape mode.",
+  "version": "0.1.0",
+  "inputSchema": {
+    "keyword": {
+      "type": "string",
+      "required": true,
+      "description": "LCSC part number, MPN, category, manufacturer, or search phrase."
+    }
+  },
+  "steps": [
+    {
+      "id": "api",
+      "op": "fetch_json",
+      "input": {
+        "url": "https://wmsc.lcsc.com/ftps/wm/search/v2/global",
+        "method": "POST",
+        "headers": {
+          "accept": "application/json",
+          "content-type": "application/json"
+        },
+        "json": {
+          "keyword": "{{keyword}}"
+        },
+        "maxBytes": 2097152
+      }
+    },
+    {
+      "id": "result",
+      "op": "json_path",
+      "from": "steps.api.json",
+      "path": "result"
+    },
+    {
+      "id": "search",
+      "op": "json_path",
+      "from": "steps.result",
+      "path": "productSearchResultVO"
+    },
+    {
+      "id": "rawProducts",
+      "op": "json_path",
+      "from": "steps.search",
+      "path": "productList"
+    },
+    {
+      "id": "directProduct",
+      "op": "json_path",
+      "from": "steps.result",
+      "path": "tipProductDetailUrlVO"
+    },
+    {
+      "id": "directMatch",
+      "op": "json_path",
+      "from": "steps.result",
+      "path": "tipProductDetailUrlVO.productCode"
+    }
+  ],
+  "returns": {
+    "source": "scrape",
+    "keyword": "{{keyword}}",
+    "status": "$steps.api.status",
+    "ok": "$steps.api.ok",
+    "directMatch": "$steps.directMatch",
+    "directProduct": "$steps.directProduct",
+    "totalCount": "$steps.search.totalCount",
+    "count": "$steps.rawProducts.length",
+    "products": "$steps.rawProducts"
+  }
+}

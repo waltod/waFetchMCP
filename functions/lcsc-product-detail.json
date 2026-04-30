@@ -1,0 +1,91 @@
+{
+  "name": "lcsc-product-detail",
+  "description": "Fetch LCSC product details through the public no-key web endpoint used by lcsc-fetcher scrape mode.",
+  "version": "0.1.0",
+  "inputSchema": {
+    "productCode": {
+      "type": "string",
+      "required": true,
+      "description": "LCSC part number, for example C2980297."
+    }
+  },
+  "steps": [
+    {
+      "id": "api",
+      "op": "fetch_json",
+      "input": {
+        "url": "https://wmsc.lcsc.com/ftps/wm/product/detail?productCode={{productCode|upper|urlencode}}",
+        "method": "GET",
+        "headers": {
+          "accept": "application/json"
+        },
+        "maxBytes": 2097152
+      }
+    },
+    {
+      "id": "product",
+      "op": "json_path",
+      "from": "steps.api.json",
+      "path": "result"
+    },
+    {
+      "id": "rawAttributes",
+      "op": "json_path",
+      "from": "steps.product",
+      "path": "paramVOList"
+    },
+    {
+      "id": "attributes",
+      "op": "map",
+      "from": "steps.rawAttributes",
+      "maxItems": 100,
+      "value": {
+        "name": "$item.paramNameEn",
+        "value": "$item.paramValueEn"
+      }
+    },
+    {
+      "id": "rawPriceBreaks",
+      "op": "json_path",
+      "from": "steps.product",
+      "path": "productPriceList"
+    },
+    {
+      "id": "priceBreaks",
+      "op": "map",
+      "from": "steps.rawPriceBreaks",
+      "maxItems": 50,
+      "value": {
+        "quantity": "$item.ladder",
+        "price": "$item.productPrice",
+        "usdPrice": "$item.usdPrice",
+        "currencyPrice": "$item.currencyPrice",
+        "currencySymbol": "$item.currencySymbol"
+      }
+    }
+  ],
+  "returns": {
+    "source": "scrape",
+    "status": "$steps.api.status",
+    "ok": "$steps.api.ok",
+    "product": {
+      "productCode": "$steps.product.productCode",
+      "mpn": "$steps.product.productModel",
+      "manufacturer": "$steps.product.brandNameEn",
+      "description": "$steps.product.productIntroEn",
+      "name": "$steps.product.productNameEn",
+      "category": "$steps.product.catalogName",
+      "parentCategory": "$steps.product.parentCatalogName",
+      "package": "$steps.product.encapStandard",
+      "stock": "$steps.product.stockNumber",
+      "stockSz": "$steps.product.stockSz",
+      "minOrderQuantity": "$steps.product.minBuyNumber",
+      "orderMultiple": "$steps.product.minPacketNumber",
+      "productUrl": "https://www.lcsc.com/product-detail/{{steps.product.productCode|urlencode}}.html",
+      "datasheetUrl": "$steps.product.pdfUrl",
+      "imageUrl": "$steps.product.productImageUrl",
+      "attributes": "$steps.attributes",
+      "priceBreaks": "$steps.priceBreaks"
+    }
+  }
+}

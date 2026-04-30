@@ -1,0 +1,55 @@
+{
+  "name": "imdb-title-suggestion",
+  "description": "Fetch IMDb title metadata through IMDb's public no-key suggestion JSON endpoint. This avoids direct HTML title-page scraping, which may return Amazon WAF challenge responses.",
+  "version": "0.1.0",
+  "inputSchema": {
+    "titleId": {
+      "type": "string",
+      "required": true,
+      "description": "IMDb title id, for example tt0133093."
+    }
+  },
+  "steps": [
+    {
+      "id": "api",
+      "op": "fetch_json",
+      "input": {
+        "url": "https://v2.sg.media-imdb.com/suggestion/t/{{titleId|lower|urlencode}}.json",
+        "headers": {
+          "accept": "application/json"
+        },
+        "maxBytes": 1048576
+      }
+    },
+    {
+      "id": "items",
+      "op": "json_path",
+      "from": "steps.api.json",
+      "path": "d"
+    },
+    {
+      "id": "match",
+      "op": "json_path",
+      "from": "steps.items",
+      "path": "0"
+    }
+  ],
+  "returns": {
+    "source": "imdb-suggestion",
+    "titleId": "{{titleId}}",
+    "status": "$steps.api.status",
+    "ok": "$steps.api.ok",
+    "challenge": "$steps.api.challenge",
+    "result": {
+      "id": "$steps.match.id",
+      "title": "$steps.match.l",
+      "type": "$steps.match.q",
+      "typeId": "$steps.match.qid",
+      "year": "$steps.match.y",
+      "castSummary": "$steps.match.s",
+      "rank": "$steps.match.rank",
+      "image": "$steps.match.i",
+      "titleUrl": "https://www.imdb.com/title/{{steps.match.id|urlencode}}/"
+    }
+  }
+}
