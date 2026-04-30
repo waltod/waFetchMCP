@@ -17,7 +17,52 @@ Use it when a site does not have a ready-made MCP integration yet, or when you w
 - Private network protection by default.
 - Bundled workflow examples and patterns for Fandom MediaWiki APIs, IMDb suggestion metadata, and LCSC-style catalog lookups.
 
-## Install
+## Easy Install
+
+Node.js 18 or newer is required.
+
+Windows PowerShell:
+
+```powershell
+git clone https://github.com/waltod/waFetchMCP.git C:\MCP\waFetchMCP
+cd C:\MCP\waFetchMCP
+npm install
+npm test
+```
+
+macOS/Linux:
+
+```bash
+git clone https://github.com/waltod/waFetchMCP.git ~/MCP/waFetchMCP
+cd ~/MCP/waFetchMCP
+npm install
+npm test
+```
+
+Add it to Codex by placing this in `C:\Users\<you>\.codex\config.toml` on Windows, or `~/.codex/config.toml` on macOS/Linux:
+
+```toml
+[mcp_servers.waFetchMCP]
+command = "node"
+args = ["C:\\MCP\\waFetchMCP\\src\\mcp-server.js"]
+startup_timeout_sec = 30.0
+tool_timeout_sec = 120.0
+
+[mcp_servers.waFetchMCP.env]
+FETCHER_MAX_BYTES = "1048576"
+FETCHER_TIMEOUT_MS = "30000"
+FETCHER_FUNCTIONS_DIR = "C:\\MCP\\waFetchMCP\\functions"
+```
+
+Restart Codex, then ask it to run:
+
+```text
+Use waFetchMCP to list saved fetcher functions.
+```
+
+For non-Windows installs, replace the two `C:\\MCP\\waFetchMCP\\...` paths in the config with your actual checkout path.
+
+## Manual Install
 
 ```bash
 git clone https://github.com/waltod/waFetchMCP.git
@@ -25,8 +70,6 @@ cd waFetchMCP
 npm install
 npm test
 ```
-
-Node.js 18 or newer is required.
 
 For MCP client setup, see [Installing waFetchMCP in Codex and Claude](docs/INSTALL-CODEX-CLAUDE.md).
 
@@ -84,6 +127,7 @@ npm run cli -- robots example.com
 npm run cli -- functions
 npm run cli -- run-function fandom-allpages --arg wiki=harrypotter --arg limit=3 --trace
 npm run cli -- run-function fandom-page-html --arg wiki=harrypotter --arg "title=Harry Potter"
+npm run cli -- run-function imdb-title-suggestion --arg titleId=tt0133093 --trace
 ```
 
 After global installation:
